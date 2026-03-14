@@ -1,14 +1,14 @@
 # opencode-analytics
 
-`opencode-analytics` is an OpenCode plugin package that records local skill analytics in SQLite and exposes bundled read commands.
+`opencode-analytics` is an OpenCode plugin that records local skill analytics in SQLite and exposes built-in slash commands for inspecting the data.
 
-It currently tracks `skill` and `skill_use` tool activity, stores runs in a local SQLite database, and provides five analytics commands:
+## Features
 
-- `/skill-analytics-overview`
-- `/skill-analytics-detail <name>`
-- `/skill-analytics-health [name]`
-- `/skill-analytics-recent [limit]`
-- `/skill-analytics-export [limit]`
+- tracks `skill` and `skill_use`
+- stores analytics locally in SQLite
+- works with zero required configuration
+- ships built-in slash commands
+- keeps reads available after runtime write failures
 
 ## Install
 
@@ -16,9 +16,7 @@ It currently tracks `skill` and `skill_use` tool activity, stores runs in a loca
 npm install opencode-analytics@<version>
 ```
 
-Replace `<version>` with the published package version you want to install.
-
-Then add the package to your OpenCode config:
+Then add the plugin to `opencode.json`:
 
 ```json
 {
@@ -26,20 +24,26 @@ Then add the package to your OpenCode config:
 }
 ```
 
-Restart OpenCode after changing the plugin list.
+Restart OpenCode after updating the plugin list.
 
-## Minimal configuration
+## Built-in commands
 
-The package works with defaults by using the same minimal plugin entry shown above.
+- `/skill-analytics-overview [limit]`
+- `/skill-analytics-detail <name>`
+- `/skill-analytics-health [name]`
+- `/skill-analytics-recent [limit]`
+- `/skill-analytics-export [limit]`
 
-Default behavior:
+## Default behavior
 
-- analytics enabled
-- commands enabled
-- skill tracking enabled
-- storage path at `~/.opencode-analytics/data/analytics.sqlite`
+Without any extra config, the plugin:
 
-## Optional overrides
+- enables analytics
+- enables commands
+- enables skill tracking
+- stores data at `~/.opencode-analytics/data/analytics.sqlite`
+
+## Optional configuration
 
 ```json
 {
@@ -63,7 +67,7 @@ Supported config keys:
 | Key | Type | Default | Notes |
 | --- | --- | --- | --- |
 | `opencodeAnalytics.enabled` | `boolean` | `true` | Disables analytics startup entirely when `false` |
-| `opencodeAnalytics.debug` | `boolean` | `false` | Reserved debug flag; currently resolved but not otherwise used by the package |
+| `opencodeAnalytics.debug` | `boolean` | `false` | Resolved by config; currently not used elsewhere |
 | `opencodeAnalytics.storagePath` | `string` | `~/.opencode-analytics/data/analytics.sqlite` | Overrides the SQLite file location |
 | `opencodeAnalytics.commands.enabled` | `boolean` | `true` | Controls slash-command registration |
 | `opencodeAnalytics.trackers.skill.enabled` | `boolean` | `true` | Stops new skill writes when `false` |
@@ -76,67 +80,46 @@ Environment variables override config values:
 - `OPENCODE_ANALYTICS_COMMANDS_ENABLED`
 - `OPENCODE_ANALYTICS_TRACKERS_SKILL_ENABLED`
 
-Boolean env values only recognize the literal strings `true` and `false`. Any other value is ignored and falls back to config/defaults.
+Boolean env parsing is strict:
+
+- `true` -> enabled
+- `false` -> disabled
+- any other value -> ignored
 
 ## Command behavior
 
 ### Empty state
 
-When no runs have been recorded yet:
+When no matching rows exist yet:
 
-- `/skill-analytics-overview` → `Skill overview\nNo skill runs recorded.`
-- `/skill-analytics-health` → `Skill health\nNo health rows available.`
-- `/skill-analytics-recent` → `Recent skill runs\nNo recent skill runs recorded.`
-- `/skill-analytics-export` → JSON with empty `overview` and `recent` arrays
-- `/skill-analytics-detail <name>` → `Skill detail\nNo skill run found for "<name>".`
+- `/skill-analytics-overview` -> `Skill overview\nNo skill runs recorded.`
+- `/skill-analytics-health` -> `Skill health\nNo health rows available.`
+- `/skill-analytics-recent` -> `Recent skill runs\nNo recent skill runs recorded.`
+- `/skill-analytics-export` -> JSON with empty `overview` and `recent` arrays
+- `/skill-analytics-detail <name>` -> `Skill detail\nNo skill run found for "<name>".`
 
 ### Startup-disabled state
 
-If startup initialization fails, read commands stay registered but return an unavailable payload/message instead of data.
-
-Terminal output uses this shape:
-
-```text
-Analytics unavailable
-state: disabled-at-startup
-Analytics commands are unavailable because startup initialization failed.
-reason: <reason>
-```
+If startup initialization fails, read commands stay callable but return unavailable output instead of data.
 
 ### Degraded runtime state
 
-If a runtime write fails after startup, analytics switches to `disabled-after-runtime-error`.
+If a write fails after startup, analytics switches to `disabled-after-runtime-error`.
 
 In that state:
 
 - reads still succeed
-- returned data is the last persisted data
+- data comes from the last persisted snapshot
 - terminal commands append a warning block
-- `/skill-analytics-export` returns JSON with both `warning` and `data`
-
-Warning block:
-
-```text
-Warning: Analytics collection disabled
-Analytics collection stopped after a runtime error. Showing the last persisted data.
-reason: <reason>
-```
+- export returns both `warning` and `data`
 
 ## Validation rules
 
 - `limit` must be an integer from `1` to `50`
 - `/skill-analytics-detail` requires a non-empty name
 - `/skill-analytics-health` accepts an optional name, including spaced names such as `brainstorming advanced`
-- for `/skill-analytics-detail` and `/skill-analytics-health`, remaining tokens are treated as part of the skill name rather than rejected as extra positional args
-- extra positional args are rejected for the numeric commands with a user-friendly validation error
-
-## Storage details
-
-The package creates parent directories automatically and stores analytics in SQLite.
-
-- default relative path: `.opencode-analytics/data/analytics.sqlite`
-- current schema migration: `001_initial_skill_runs`
-- tracked run status values: `completed` and `error`
+- for `detail` and `health`, remaining tokens are treated as part of the skill name
+- extra positional args are rejected for numeric commands with a user-friendly validation error
 
 ## Package contents
 
@@ -146,3 +129,12 @@ The published package currently includes:
 - `README.md`
 
 That matches the package `files` allowlist used for publishing.
+
+## More docs
+
+- root repo: `README.md`
+- install: `docs/install.md`
+- config: `docs/configuration.md`
+- commands: `docs/commands.md`
+- migration: `docs/migration-from-local-plugin.md`
+- release: `docs/release.md`

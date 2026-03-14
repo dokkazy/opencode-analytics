@@ -102,3 +102,7 @@ After the npm publish succeeds:
 3. summarize user-facing changes
 4. include the npm package version and install command: `npm install opencode-analytics@<version>`
 5. link to the migration guide if this release replaces local plugin usage
+
+## First release notes
+
+Use `docs/release-notes-v0.1.0.md` as the starting point for the first public GitHub release.
