@@ -1,0 +1,17 @@
+{
+  "name": "opencode-analytics-workspace",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "test": "bun test",
+    "check": "bun test && bunx tsc --noEmit",
+    "release:check": "bun test && bunx tsc --noEmit && npm pack --dry-run --workspace opencode-analytics"
+  },
+  "devDependencies": {
+    "bun-types": "1.2.21",
+    "typescript": "^5.7.3"
+  }
+}
